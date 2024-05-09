@@ -1,6 +1,7 @@
 ﻿using System.Data.SqlClient;
 using apbd07.Models;
 using apbd07.Models.DTO_s;
+using apbd07.Services;
 using Microsoft.AspNetCore.Mvc;
 
 namespace apbd07.Controllers;
@@ -10,80 +11,38 @@ namespace apbd07.Controllers;
 public class WarehouseController : ControllerBase
 {
     private readonly IConfiguration _configuration;
+    private WarehouseService warehouseService;
 
     public WarehouseController(IConfiguration configuration)
     {
         _configuration = configuration;
+        warehouseService = new WarehouseService(new SqlConnection(_configuration.GetConnectionString("Default")));
     }
 
-    [HttpGet]
-    public IActionResult Get(ProductWarehouse request)
+    [HttpPost]
+    public IActionResult UpdateRequestId(ProductWarehouse request)
     {
         //1
-        if (request.Amount <=0)
+        if (!warehouseService.CheckProduct(request))
         {
-            return BadRequest("There amount value smaller or equal to 0");
-        }
-        using SqlConnection connection = new SqlConnection(_configuration.GetConnectionString("Default"));
-        connection.Open();
-        using SqlCommand command = new SqlCommand();
-        command.Connection = connection;
-        command.CommandText = "SELECT * FROM Product p WHERE p.IdProduct ==@IdProduct";
-        command.Parameters.AddWithValue("IdProduct", request.IdProduct);
-        var product = (Product) command.ExecuteScalar();
-        if (product == null)
-        {
-            return BadRequest("There is no product with such id");
-        }
-        command.CommandText = "SELECT count(*) FROM Warehouse w WHERE w.IdWarehouse == @IdWarehouse";
-        command.Parameters.AddWithValue("IdWarehouse", request.IdWarehouse);
-        int warehouse = (int) command.ExecuteScalar();
-        if (warehouse == 0)
-        {
-            return BadRequest("There is no warehouse with such id");
+            return BadRequest("There problem with product");
         }
         //2
-        command.CommandText = "SELECT * FROM Order o WHERE o.IdProduct == @IdProduct AND o.Amount == @Amount AND o.CreatedAt < @RequestCreatedAt";
-        command.Parameters.AddWithValue("IdProduct", request.IdProduct);
-        command.Parameters.AddWithValue("Amount", request.Amount);
-        command.Parameters.AddWithValue("RequestCreatedAt", request.CreatedAt);
-        var order = (Order) command.ExecuteScalar();
-        if (order==null)
+        if (!warehouseService.CheckOrder(request))
         {
-            return BadRequest("There is no order with such id or amount or createdAt time");
+            return BadRequest("There problem with order");
         }
         //3
-        command.CommandText = "SELECT count(*) FROM Product_Warehouse pwa WHERE pwa.IdOrder == @IdOrder";
-        command.Parameters.AddWithValue("IdOrder", order.IdOrder);
-        int productWarehouse = (int) command.ExecuteScalar();
-        if (productWarehouse == 0)
+        if (!warehouseService.CheckProductWarehouse(request))
         {
-            return BadRequest("There is no warehouse with such id");
+            return BadRequest("There problem with warehouse");
         }
         //4
-        command.CommandText = "UPDATE Order SET FulfilledAt=@FulfilledAt WHERE IdOrder=@IdOrder";
-        command.Parameters.AddWithValue("FulfilledAt", DateTime.Now);
-        command.Parameters.AddWithValue("IdOrder", order.IdOrder);
-        command.ExecuteNonQuery();
+        warehouseService.UpdateFulfilledAt(request);
         //5
-        command.CommandText = "INSERT INTO Product_Warehouse Values (@IdWarehouse,@IdProduct,@IdOrder,@Amount,@Price,@CreatedAt)";
-        command.Parameters.AddWithValue("IdWarehouse", request.IdWarehouse);
-        command.Parameters.AddWithValue("IdProduct", request.IdProduct);
-        command.Parameters.AddWithValue("IdOrder", order.IdOrder);
-        command.Parameters.AddWithValue("Amount", request.Amount);
-        command.Parameters.AddWithValue("Price", request.Amount * product.Price);
-        command.Parameters.AddWithValue("CreatedAt", DateTime.Now);
-        command.ExecuteNonQuery();
+        warehouseService.InsertRequest(request);
         //6
-        command.CommandText =
-            "SELECT IdProductWarehouse FROM Product_Warehouse WHERE IdWarehouse==@IdWarehouse AND IdProduct==@IdProduct AND IdOrder==@IdOrder AND Amount==@Amount AND Price==@Price AND CreatedAt==@CreatedAt";
-        command.Parameters.AddWithValue("IdWarehouse", request.IdWarehouse);
-        command.Parameters.AddWithValue("IdProduct", request.IdProduct);
-        command.Parameters.AddWithValue("IdOrder", order.IdOrder);
-        command.Parameters.AddWithValue("Amount", request.Amount);
-        command.Parameters.AddWithValue("Price", request.Amount * product.Price);
-        command.Parameters.AddWithValue("CreatedAt", DateTime.Now);
-        int idProductWarehouse = (int) command.ExecuteScalar();
-        return Ok(idProductWarehouse);
+        var id = warehouseService.GetIdOfRequest(request);
+        return Ok(id);
     }
 }
