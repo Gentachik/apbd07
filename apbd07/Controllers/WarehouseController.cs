@@ -47,8 +47,10 @@ public class WarehouseController : ControllerBase
     [Route("task2")]
     public async Task<IActionResult> Task2(WarehouseDTO warehouseDto)
     {
-        await _warehouseRepository.ExecuteProcedure(warehouseDto);
-        return Ok();
+        var id = await _warehouseRepository.ExecuteProcedure(warehouseDto);
+        if (id == 0)
+            return BadRequest();
+        return Ok(id);
     }
 
 }

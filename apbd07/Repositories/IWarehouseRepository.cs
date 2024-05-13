@@ -12,5 +12,5 @@ public interface IWarehouseRepository
     Task<int> InsertToProductWarehouse(WarehouseDTO warehouseDto);
     Task<int> GetOrderId(int id, int amount, DateTime createdAt);
     Task<double> GetProductPrice(int id);
-    Task ExecuteProcedure(WarehouseDTO warehouseDto);
+    Task<int> ExecuteProcedure(WarehouseDTO warehouseDto);
 }

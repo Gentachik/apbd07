@@ -180,10 +180,10 @@ public class WarehouseRepository : IWarehouseRepository
         return price; 
     }
 
-    public async Task ExecuteProcedure(WarehouseDTO warehouseDto)
+    public async Task<int> ExecuteProcedure(WarehouseDTO warehouseDto)
     {
         await using SqlConnection connection = new SqlConnection(_configuration.GetConnectionString("Default"));
-        await using SqlCommand command = new SqlCommand("EXEC AddProductToWarehouse @IdProduct, @IdWarehouse, @Amount, @CreatedAt", connection)
+        await using SqlCommand command = new SqlCommand("AddProductToWarehouse", connection)
         {
             CommandType = CommandType.StoredProcedure
         };
@@ -194,7 +194,8 @@ public class WarehouseRepository : IWarehouseRepository
 
         await connection.OpenAsync();
         
-        await command.ExecuteNonQueryAsync();
-
+        var id = Convert.ToInt32(command.ExecuteScalar());
+        
+        return id;
     }
 }
