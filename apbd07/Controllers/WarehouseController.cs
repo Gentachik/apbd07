@@ -19,7 +19,7 @@ public class WarehouseController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<IActionResult> UpdateRequestId(WarehouseDTO warehouseDto)
+    public async Task<IActionResult> Task1(WarehouseDTO warehouseDto)
     {
         //1
         if (!await _warehouseRepository.DoesProductExist(warehouseDto.IdProduct))
@@ -41,4 +41,12 @@ public class WarehouseController : ControllerBase
         //6
         return Ok(id);
     }
+
+    [HttpPost]
+    public async Task<IActionResult> Task2(WarehouseDTO warehouseDto)
+    {
+        await _warehouseRepository.ExecuteProcedure(warehouseDto);
+        return Ok();
+    }
+
 }

@@ -1,4 +1,5 @@
-﻿using System.Data.SqlClient;
+﻿using System.Data;
+using System.Data.SqlClient;
 using apbd07.Models.DTOs;
 
 namespace apbd07.Repositories;
@@ -177,5 +178,23 @@ public class WarehouseRepository : IWarehouseRepository
             price = reader.GetInt32(orderIdOrdinal);
         }
         return price; 
+    }
+
+    public async Task ExecuteProcedure(WarehouseDTO warehouseDto)
+    {
+        await using SqlConnection connection = new SqlConnection(_configuration.GetConnectionString("Default"));
+        await using SqlCommand command = new SqlCommand("EXEC AddProductToWarehouse @IdProduct, @IdWarehouse, @Amount, @CreatedAt", connection)
+        {
+            CommandType = CommandType.StoredProcedure
+        };
+        command.Parameters.AddWithValue("@IdProduct", warehouseDto.IdProduct);
+        command.Parameters.AddWithValue("@IdWarehouse", warehouseDto.IdWarehouse);
+        command.Parameters.AddWithValue("@Amount", warehouseDto.Amount);
+        command.Parameters.AddWithValue("@CreatedAt", warehouseDto.CreatedAt);
+
+        await connection.OpenAsync();
+        
+        await command.ExecuteNonQueryAsync();
+
     }
 }
