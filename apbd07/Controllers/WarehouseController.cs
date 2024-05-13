@@ -1,7 +1,6 @@
-﻿using System.Data.SqlClient;
-using apbd07.Models;
-using apbd07.Models.DTO_s;
-using apbd07.Services;
+﻿using apbd07.Models.DTOs;
+using apbd07.Repositories;
+using apbd07.Service;
 using Microsoft.AspNetCore.Mvc;
 
 namespace apbd07.Controllers;
@@ -10,39 +9,36 @@ namespace apbd07.Controllers;
 [Route("api/[controller]")]
 public class WarehouseController : ControllerBase
 {
-    private readonly IConfiguration _configuration;
-    private WarehouseService warehouseService;
+    private WarehouseRepository _warehouseRepository;
+    private WarehouseService _warehouseService;
 
     public WarehouseController(IConfiguration configuration)
     {
-        _configuration = configuration;
-        warehouseService = new WarehouseService(new SqlConnection(_configuration.GetConnectionString("Default")));
+        _warehouseRepository = new WarehouseRepository(configuration);
+        _warehouseService = new WarehouseService();
     }
 
     [HttpPost]
-    public IActionResult UpdateRequestId(ProductWarehouse request)
+    public async Task<IActionResult> UpdateRequestId(WarehouseDTO warehouseDto)
     {
         //1
-        if (!warehouseService.CheckProduct(request))
-        {
-            return BadRequest("There problem with product");
-        }
+        if (!await _warehouseRepository.DoesProductExist(warehouseDto.IdProduct))
+            return NotFound($"Product with given ID - {warehouseDto.IdProduct} doesn't exist");
+        if (!await _warehouseRepository.DoesWarehouseExist(warehouseDto.IdWarehouse))
+            return NotFound($"Warehouse with given ID - {warehouseDto.IdWarehouse} doesn't exist");
+        if (!_warehouseService.DoesAmountPositive(warehouseDto.Amount))
+            return BadRequest("Amount should be a positive value");
         //2
-        if (!warehouseService.CheckOrder(request))
-        {
-            return BadRequest("There problem with order");
-        }
+        if (!await _warehouseRepository.DoesOrderExist(warehouseDto.IdProduct, warehouseDto.Amount, warehouseDto.CreatedAt))
+            return NotFound($"Order with provided ID product - {warehouseDto.IdProduct} and amount - {warehouseDto.Amount} and after this date - {warehouseDto.CreatedAt} doesn't exist");
         //3
-        if (!warehouseService.CheckProductWarehouse(request))
-        {
-            return BadRequest("There problem with warehouse");
-        }
+        if (!await _warehouseRepository.DoesOrderCompleted(warehouseDto.IdProduct, warehouseDto.Amount, warehouseDto.CreatedAt))
+            return NotFound($"Order with provided ID product - {warehouseDto.IdProduct} and amount - {warehouseDto.Amount} and after this date - {warehouseDto.CreatedAt} has been already completed");
         //4
-        warehouseService.UpdateFulfilledAt(request);
+        await _warehouseRepository.UpdateOrder(warehouseDto.IdProduct, warehouseDto.Amount, warehouseDto.CreatedAt);
         //5
-        warehouseService.InsertRequest(request);
+        var id = _warehouseRepository.InsertToProductWarehouse(warehouseDto);
         //6
-        var id = warehouseService.GetIdOfRequest(request);
         return Ok(id);
     }
 }

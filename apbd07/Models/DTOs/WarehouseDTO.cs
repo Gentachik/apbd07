@@ -1,8 +1,8 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace apbd07.Models.DTO_s;
+namespace apbd07.Models.DTOs;
 
-public class ProductWarehouse
+public class WarehouseDTO
 {
     [Required]
     public int IdProduct { get; set; }
