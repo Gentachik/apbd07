@@ -9,16 +9,17 @@ namespace apbd07.Controllers;
 [Route("api/[controller]")]
 public class WarehouseController : ControllerBase
 {
-    private WarehouseRepository _warehouseRepository;
+    private IWarehouseRepository _warehouseRepository;
     private WarehouseService _warehouseService;
 
-    public WarehouseController(IConfiguration configuration)
+    public WarehouseController(IWarehouseRepository warehouseRepository)
     {
-        _warehouseRepository = new WarehouseRepository(configuration);
+        _warehouseRepository = warehouseRepository;
         _warehouseService = new WarehouseService();
     }
 
     [HttpPost]
+    [Route("task1")]
     public async Task<IActionResult> Task1(WarehouseDTO warehouseDto)
     {
         //1
@@ -43,6 +44,7 @@ public class WarehouseController : ControllerBase
     }
 
     [HttpPost]
+    [Route("task2")]
     public async Task<IActionResult> Task2(WarehouseDTO warehouseDto)
     {
         await _warehouseRepository.ExecuteProcedure(warehouseDto);

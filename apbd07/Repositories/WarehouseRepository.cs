@@ -14,7 +14,7 @@ public class WarehouseRepository : IWarehouseRepository
 
     public async Task<bool> DoesProductExist(int id)
     {
-        var query = "SELECT 1 FROM Product WHERE ID = @ID";
+        var query = "SELECT 1 FROM Product WHERE IdProduct = @ID";
         await using SqlConnection connection = new SqlConnection(_configuration.GetConnectionString("Default"));
         await using SqlCommand command = new SqlCommand();
 
@@ -31,7 +31,7 @@ public class WarehouseRepository : IWarehouseRepository
 
     public async Task<bool> DoesWarehouseExist(int id)
     {
-        var query = "SELECT 1 FROM Product WHERE ID = @ID";
+        var query = "SELECT 1 FROM Warehouse WHERE IdWarehouse = @ID";
         await using SqlConnection connection = new SqlConnection(_configuration.GetConnectionString("Default"));
         await using SqlCommand command = new SqlCommand();
 
@@ -135,7 +135,7 @@ public class WarehouseRepository : IWarehouseRepository
     public async Task<int> GetOrderId(int id, int amount, DateTime createdAt)
     {
         var orderId = 0;
-        var query = "SELECT Order.IdOrder FROM [Order] WHERE Amount = @AMOUNT AND IdProduct = @ID AND CreatedAt < @CreatedAt";
+        var query = "SELECT IdOrder FROM [Order] WHERE Amount = @AMOUNT AND IdProduct = @ID AND CreatedAt < @CreatedAt";
         await using SqlConnection connection = new SqlConnection(_configuration.GetConnectionString("Default"));
         await using SqlCommand command = new SqlCommand();
 
